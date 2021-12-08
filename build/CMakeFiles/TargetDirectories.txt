@@ -1,3 +1,0 @@
-/home/xyadlo00/studies/FIT/AVS/avs-proj02/build/CMakeFiles/rebuild_cache.dir
-/home/xyadlo00/studies/FIT/AVS/avs-proj02/build/CMakeFiles/edit_cache.dir
-/home/xyadlo00/studies/FIT/AVS/avs-proj02/build/CMakeFiles/PMC.dir

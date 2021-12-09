@@ -38,7 +38,7 @@ unsigned LoopMeshBuilder::marchCubes(const ParametricScalarField &field)
 
         // 4. Evaluate "Marching Cube" at given position in the grid and
         //    store the number of triangles generated.
-        std::cout << "Before new iteration buildCube\n";
+        // std::cout << "Before new iteration buildCube\n";
         totalTriangles += buildCube(cubeOffset, field);
     }
 
@@ -52,9 +52,6 @@ float LoopMeshBuilder::evaluateFieldAt(const Vec3_t<float> &pos, const Parametri
 
     // 1. Store pointer to and number of 3D points in the field
     //    (to avoid "data()" and "size()" call in the loop).
-    // const Vec3_t<float> *pPoints = field.getPoints().data();
-    // const unsigned count = unsigned(field.getPoints().size());
-
     float value = std::numeric_limits<float>::max();
 
     // 2. Find minimum square distance from points "pos" to any point in the
@@ -76,5 +73,6 @@ float LoopMeshBuilder::evaluateFieldAt(const Vec3_t<float> &pos, const Parametri
 
 void LoopMeshBuilder::emitTriangle(const BaseMeshBuilder::Triangle_t &triangle)
 {
+    #pragma omp critical(loopEmitTriangle)
     mTriangles.push_back(triangle);
 }

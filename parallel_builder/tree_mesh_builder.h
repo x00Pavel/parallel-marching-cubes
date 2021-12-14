@@ -19,9 +19,15 @@ public:
 
 protected:
     unsigned marchCubes(const ParametricScalarField &field);
+    unsigned octreeDevider(const ParametricScalarField &field, const Vec3_t<float> &cubeOffset, const unsigned gridSize);
     float evaluateFieldAt(const Vec3_t<float> &pos, const ParametricScalarField &field);
     void emitTriangle(const Triangle_t &triangle);
-    const Triangle_t *getTrianglesArray() const { return nullptr; }
+    const Triangle_t *getTrianglesArray() const { return mTriangles.data(); }
+    bool blockEmpty();
+
+    const unsigned mCutOff = 1;
+	std::vector<Triangle_t> mTriangles;
+
 };
 
 #endif // TREE_MESH_BUILDER_H

@@ -38,7 +38,6 @@ unsigned LoopMeshBuilder::marchCubes(const ParametricScalarField &field)
 
         // 4. Evaluate "Marching Cube" at given position in the grid and
         //    store the number of triangles generated.
-        // std::cout << "Before new iteration buildCube\n";
         totalTriangles += buildCube(cubeOffset, field);
     }
 

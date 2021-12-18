@@ -26,34 +26,29 @@ unsigned TreeMeshBuilder::octreeDevider(const ParametricScalarField &field, cons
     unsigned totalTriangles = 0;
     // check if it is already a time to stop (gridSize < mCutOff) the devision
     // and run buildCube
-    // return buildCube(...);
     if (gridSize == mCutOff){
-        totalTriangles += buildCube(cubeOffset, field);
+        unsigned tmp = buildCube(cubeOffset, field);
+
+        #pragma omp atomic update
+        totalTriangles += tmp;
     }
     else{
         const float realEdgeSize = gridSize * mGridResolution;
         const float rightSideCondition = field.getIsoLevel() + (sqrt(3.0f)/2.0f)*realEdgeSize;
+        const float halfEdge = gridSize/2.0f;
 
         const Vec3_t<float> midCubeOffset = {
-            cubeOffset.x + gridSize / 2,
-            cubeOffset.y + gridSize / 2,
-            cubeOffset.z + gridSize / 2};
+            (cubeOffset.x + halfEdge) * mGridResolution ,
+            (cubeOffset.y + halfEdge) * mGridResolution ,
+            (cubeOffset.z + halfEdge) * mGridResolution };
 
-        const Vec3_t<float> adjustedMidCubeOffset = {
-            cubeOffset.x * mGridResolution,
-            cubeOffset.y * mGridResolution,
-            cubeOffset.z * mGridResolution
-        };
-
-        const float leftSideCondition = evaluateFieldAt(adjustedMidCubeOffset, field);
+        const float leftSideCondition = evaluateFieldAt(midCubeOffset, field);
         // check that current block is empty
         if (leftSideCondition > rightSideCondition){
             return 0;
         }
         
         // block is not empty, so creating tasks for each field in the vector
-        const float halfEdge = gridSize/2;
-
         #pragma omp task shared(field, halfEdge, totalTriangles)
         {
             const Vec3_t<float> index1 = {
@@ -63,7 +58,7 @@ unsigned TreeMeshBuilder::octreeDevider(const ParametricScalarField &field, cons
                 };
             unsigned tmp = octreeDevider(field, index1, halfEdge); 
 
-            #pragma omp critical
+            #pragma omp atomic update
             totalTriangles += tmp;
         }
         #pragma omp task shared(field, halfEdge, totalTriangles)
@@ -76,7 +71,7 @@ unsigned TreeMeshBuilder::octreeDevider(const ParametricScalarField &field, cons
 
             unsigned tmp = octreeDevider(field, index2, halfEdge);
 
-            #pragma omp critical
+            #pragma omp atomic update
             totalTriangles += tmp;
         }
         #pragma omp task shared(field, halfEdge, totalTriangles)
@@ -89,7 +84,7 @@ unsigned TreeMeshBuilder::octreeDevider(const ParametricScalarField &field, cons
             
             unsigned tmp = octreeDevider(field, index3, halfEdge);
 
-            #pragma omp critical
+            #pragma omp atomic update
             totalTriangles += tmp;
         }
 
@@ -102,7 +97,7 @@ unsigned TreeMeshBuilder::octreeDevider(const ParametricScalarField &field, cons
                 };
 
             unsigned tmp = octreeDevider(field, index4, halfEdge);
-            #pragma omp critical
+            #pragma omp atomic update
             totalTriangles += tmp;
         }
 
@@ -116,7 +111,7 @@ unsigned TreeMeshBuilder::octreeDevider(const ParametricScalarField &field, cons
 
             unsigned tmp = octreeDevider(field, index5, halfEdge);
 
-            #pragma omp critical
+            #pragma omp atomic update
             totalTriangles += tmp;
         }
 
@@ -129,7 +124,7 @@ unsigned TreeMeshBuilder::octreeDevider(const ParametricScalarField &field, cons
                 };
             unsigned tmp = octreeDevider(field, index6, halfEdge);
 
-            #pragma omp critical
+            #pragma omp atomic update
             totalTriangles += tmp;
         }
 
@@ -142,7 +137,7 @@ unsigned TreeMeshBuilder::octreeDevider(const ParametricScalarField &field, cons
                 };
             unsigned tmp = octreeDevider(field, index7, halfEdge);
 
-            #pragma omp critical
+            #pragma omp atomic update
             totalTriangles += tmp;
         }
 
@@ -155,13 +150,11 @@ unsigned TreeMeshBuilder::octreeDevider(const ParametricScalarField &field, cons
                 };
             unsigned tmp = octreeDevider(field, index8, halfEdge);
 
-            #pragma omp critical
+            #pragma omp atomic update
             totalTriangles += tmp;
         }
     }
     
-    
-    // create a new task for the devision of each cell in the vector
     #pragma omp taskwait
     return totalTriangles;
 }
@@ -174,7 +167,7 @@ unsigned TreeMeshBuilder::marchCubes(const ParametricScalarField &field)
     // code and only when that works add OpenMP tasks to achieve parallelism.
     
     unsigned totalTriangles = 0;
-    #pragma omp parallel
+    #pragma omp parallel default(none) shared(totalTriangles, field)
     #pragma omp  single
     totalTriangles = octreeDevider(field, Vec3_t<float>(), mGridSize);
 
